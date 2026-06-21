@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "commit-message": {
+      "source": "ujon/skills",
+      "sourceType": "github",
+      "skillPath": "skills/commit-message/SKILL.md",
+      "computedHash": "b33008569970c504641d2f77fcf02469239582f55c4c75ca94962a2eb8b19529"
+    }
+  }
+}

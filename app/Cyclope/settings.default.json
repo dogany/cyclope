@@ -1,0 +1,742 @@
+{
+  "schema_version" : 1,
+  "scroll_direction" : {
+    "reverse_wheel_mouse_scrolling" : false
+  },
+  "sleep_prevention" : {
+    "disable_on_battery_power" : false,
+    "inactivity_lock_minutes" : 30
+  },
+  "window_manager" : {
+    "custom_command_presentation" : "collapsed",
+    "default_command_presentation" : "expanded",
+    "menu_categories" : [
+      {
+        "category" : "window",
+        "show_in_menu" : true
+      },
+      {
+        "category" : "sleep",
+        "show_in_menu" : true
+      },
+      {
+        "category" : "scrolling",
+        "show_in_menu" : true
+      }
+    ],
+    "modal_shortcut" : {
+      "is_enabled" : true,
+      "key" : {
+        "key_code" : 1,
+        "modifiers" : [
+          "option"
+        ],
+        "symbol" : "S"
+      }
+    },
+    "snap_activation_dwell_delay" : 0.45,
+    "window_commands" : [
+      {
+        "command" : "snap_left",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 0,
+            "modifiers" : [
+              "option",
+              "shift"
+            ],
+            "symbol" : "A"
+          },
+          "is_enabled" : true,
+          "suppresses_default_key" : false
+        },
+        "id" : "snap_left",
+        "kind" : "default",
+        "layout" : {
+          "column_span" : 1,
+          "columns" : 2,
+          "row_span" : 2,
+          "rows" : 2,
+          "start_column" : 0,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 123,
+              "modifiers" : [
+                "command"
+              ],
+              "symbol" : "←"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Left",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 1,
+              "row_span" : 10,
+              "start_column" : 0,
+              "start_row" : 1
+            }
+          ],
+          "is_enabled" : true
+        },
+        "type" : "horizontal"
+      },
+      {
+        "command" : "snap_right",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 2,
+            "modifiers" : [
+              "option",
+              "shift"
+            ],
+            "symbol" : "D"
+          },
+          "is_enabled" : true,
+          "suppresses_default_key" : false
+        },
+        "id" : "snap_right",
+        "kind" : "default",
+        "layout" : {
+          "column_span" : 1,
+          "columns" : 2,
+          "row_span" : 2,
+          "rows" : 2,
+          "start_column" : 1,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 124,
+              "modifiers" : [
+                "command"
+              ],
+              "symbol" : "→"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Right",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 1,
+              "row_span" : 10,
+              "start_column" : 17,
+              "start_row" : 1
+            }
+          ],
+          "is_enabled" : true
+        },
+        "type" : "horizontal"
+      },
+      {
+        "command" : "snap_top",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 13,
+            "modifiers" : [
+              "option",
+              "shift"
+            ],
+            "symbol" : "W"
+          },
+          "is_enabled" : true,
+          "suppresses_default_key" : false
+        },
+        "id" : "snap_top",
+        "kind" : "default",
+        "layout" : {
+          "column_span" : 2,
+          "columns" : 2,
+          "row_span" : 1,
+          "rows" : 2,
+          "start_column" : 0,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 126,
+              "modifiers" : [
+                "command"
+              ],
+              "symbol" : "↑"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Top",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 8,
+              "row_span" : 1,
+              "start_column" : 5,
+              "start_row" : 0
+            }
+          ],
+          "is_enabled" : true
+        },
+        "type" : "horizontal"
+      },
+      {
+        "command" : "snap_bottom",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 1,
+            "modifiers" : [
+              "option",
+              "shift"
+            ],
+            "symbol" : "S"
+          },
+          "is_enabled" : true,
+          "suppresses_default_key" : false
+        },
+        "id" : "snap_bottom",
+        "kind" : "default",
+        "layout" : {
+          "column_span" : 2,
+          "columns" : 2,
+          "row_span" : 1,
+          "rows" : 2,
+          "start_column" : 0,
+          "start_row" : 1
+        },
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 125,
+              "modifiers" : [
+                "command"
+              ],
+              "symbol" : "↓"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Bottom",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 8,
+              "row_span" : 1,
+              "start_column" : 5,
+              "start_row" : 11
+            }
+          ],
+          "is_enabled" : true
+        },
+        "type" : "horizontal"
+      },
+      {
+        "command" : "snap_full_screen",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 3,
+            "modifiers" : [
+              "option",
+              "shift"
+            ],
+            "symbol" : "F"
+          },
+          "is_enabled" : true,
+          "suppresses_default_key" : false
+        },
+        "id" : "snap_full_screen",
+        "kind" : "default",
+        "layout" : {
+          "column_span" : 2,
+          "columns" : 2,
+          "row_span" : 2,
+          "rows" : 2,
+          "start_column" : 0,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 3,
+              "modifiers" : [
+
+              ],
+              "symbol" : "F"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Full Screen",
+        "snap" : {
+          "areas" : [
+
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "command" : "snap_center",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 8,
+            "modifiers" : [
+              "option",
+              "shift"
+            ],
+            "symbol" : "C"
+          },
+          "is_enabled" : true,
+          "suppresses_default_key" : false
+        },
+        "id" : "snap_center",
+        "kind" : "default",
+        "layout" : {
+          "column_span" : 1,
+          "columns" : 3,
+          "row_span" : 1,
+          "rows" : 3,
+          "start_column" : 1,
+          "start_row" : 1
+        },
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 8,
+              "modifiers" : [
+
+              ],
+              "symbol" : "C"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Center",
+        "snap" : {
+          "areas" : [
+
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "command" : "repeat_last_snap",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 15,
+            "modifiers" : [
+              "control",
+              "option",
+              "command"
+            ],
+            "symbol" : "R"
+          },
+          "is_enabled" : false,
+          "suppresses_default_key" : false
+        },
+        "id" : "repeat_last_snap",
+        "kind" : "default",
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 15,
+              "modifiers" : [
+
+              ],
+              "symbol" : "R"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Repeat Last Snap",
+        "type" : "horizontal"
+      },
+      {
+        "command" : "toggle_sleep_prevention",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 1,
+            "modifiers" : [
+              "control",
+              "option",
+              "command"
+            ],
+            "symbol" : "S"
+          },
+          "is_enabled" : false,
+          "suppresses_default_key" : false
+        },
+        "id" : "toggle_sleep_prevention",
+        "kind" : "default",
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 1,
+              "modifiers" : [
+
+              ],
+              "symbol" : "S"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Sleep Prevention",
+        "type" : "horizontal"
+      },
+      {
+        "command" : "toggle_natural_scrolling",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 46,
+            "modifiers" : [
+              "control",
+              "option",
+              "command"
+            ],
+            "symbol" : "M"
+          },
+          "is_enabled" : false,
+          "suppresses_default_key" : false
+        },
+        "id" : "toggle_natural_scrolling",
+        "kind" : "default",
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 46,
+              "modifiers" : [
+
+              ],
+              "symbol" : "M"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Natural Scrolling",
+        "type" : "horizontal"
+      },
+      {
+        "command" : "toggle_wheel_mouse_reverse_scrolling",
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "default_key" : {
+            "key_code" : 45,
+            "modifiers" : [
+              "control",
+              "option",
+              "command"
+            ],
+            "symbol" : "N"
+          },
+          "is_enabled" : false,
+          "suppresses_default_key" : false
+        },
+        "id" : "toggle_wheel_mouse_reverse_scrolling",
+        "kind" : "default",
+        "modal_shortcut" : {
+          "default_keys" : [
+            {
+              "key_code" : 45,
+              "modifiers" : [
+
+              ],
+              "symbol" : "N"
+            }
+          ],
+          "is_enabled" : true
+        },
+        "name" : "Reverse Mouse Scrolling",
+        "type" : "horizontal"
+      },
+      {
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "is_enabled" : false
+        },
+        "id" : "6C334782-32B6-40A0-8632-C5E88B0DF3D9",
+        "kind" : "custom",
+        "layout" : {
+          "column_span" : 8,
+          "columns" : 9,
+          "row_span" : 10,
+          "rows" : 10,
+          "start_column" : 0,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_key" : {
+            "key_code" : 18,
+            "modifiers" : [
+
+            ],
+            "symbol" : "1"
+          },
+          "is_enabled" : true
+        },
+        "name" : "Left 8\/9",
+        "position" : "left",
+        "snap" : {
+          "areas" : [
+
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "is_enabled" : false
+        },
+        "id" : "F73BA684-12E0-450B-BF27-F971240F834C",
+        "kind" : "custom",
+        "layout" : {
+          "column_span" : 14,
+          "columns" : 16,
+          "row_span" : 10,
+          "rows" : 10,
+          "start_column" : 1,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_key" : {
+            "key_code" : 19,
+            "modifiers" : [
+
+            ],
+            "symbol" : "2"
+          },
+          "is_enabled" : true
+        },
+        "name" : "Center 14\/16",
+        "position" : "center",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 1,
+              "row_span" : 10,
+              "start_column" : 0,
+              "start_row" : 1
+            }
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "is_enabled" : false
+        },
+        "id" : "8D196C5A-7C6A-49AC-BC0F-D61D3D1AA6C8",
+        "kind" : "custom",
+        "layout" : {
+          "column_span" : 8,
+          "columns" : 9,
+          "row_span" : 10,
+          "rows" : 10,
+          "start_column" : 1,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_key" : {
+            "key_code" : 20,
+            "modifiers" : [
+
+            ],
+            "symbol" : "3"
+          },
+          "is_enabled" : true
+        },
+        "name" : "Right 8\/9",
+        "position" : "bottomLeft",
+        "snap" : {
+          "areas" : [
+
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "is_enabled" : false
+        },
+        "id" : "D50BA24F-67ED-48D0-86BA-B3D380DA33EB",
+        "kind" : "custom",
+        "layout" : {
+          "column_span" : 1,
+          "columns" : 3,
+          "row_span" : 2,
+          "rows" : 2,
+          "start_column" : 0,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_key" : {
+            "key_code" : 21,
+            "modifiers" : [
+
+            ],
+            "symbol" : "4"
+          },
+          "is_enabled" : true
+        },
+        "name" : "Left 1\/3",
+        "position" : "left",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 1,
+              "row_span" : 10,
+              "start_column" : 0,
+              "start_row" : 1
+            }
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "is_enabled" : false
+        },
+        "id" : "A0F0B6A7-4519-43D4-8C1C-7190B5DA0F12",
+        "kind" : "custom",
+        "layout" : {
+          "column_span" : 1,
+          "columns" : 3,
+          "row_span" : 2,
+          "rows" : 2,
+          "start_column" : 1,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_key" : {
+            "key_code" : 23,
+            "modifiers" : [
+
+            ],
+            "symbol" : "5"
+          },
+          "is_enabled" : true
+        },
+        "name" : "Middle 1\/3",
+        "position" : "center",
+        "snap" : {
+          "areas" : [
+
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      },
+      {
+        "display" : {
+          "show_in_menu" : true,
+          "show_in_modal" : true
+        },
+        "global_shortcut" : {
+          "is_enabled" : false
+        },
+        "id" : "9A270D2C-BCA7-41EB-8413-1BFD978B9F7A",
+        "kind" : "custom",
+        "layout" : {
+          "column_span" : 1,
+          "columns" : 3,
+          "row_span" : 2,
+          "rows" : 2,
+          "start_column" : 2,
+          "start_row" : 0
+        },
+        "modal_shortcut" : {
+          "default_key" : {
+            "key_code" : 22,
+            "modifiers" : [
+
+            ],
+            "symbol" : "6"
+          },
+          "is_enabled" : true
+        },
+        "name" : "Right 1\/3",
+        "position" : "right",
+        "snap" : {
+          "areas" : [
+            {
+              "column_span" : 1,
+              "row_span" : 10,
+              "start_column" : 0,
+              "start_row" : 1
+            }
+          ],
+          "is_enabled" : false
+        },
+        "type" : "horizontal"
+      }
+    ]
+  }
+}

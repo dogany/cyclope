@@ -1,0 +1,455 @@
+name: Release
+run-name: Release v${{ inputs.version }}
+
+# Manually triggered, with a manual approval gate between build and deploy:
+#
+#   1. gh workflow run release.yml -f version=0.0.3   (or Actions ▸ Release ▸ Run workflow)
+#   2. the `build` job builds + Developer ID-signs + notarizes, then prints
+#      version / build number / sha256 to the run summary
+#   3. the `release` job waits for your approval (environment "release"); once you
+#      confirm the numbers look right, approve it to tag + publish + bump the cask
+#
+# Versioning:
+#   app version  (CFBundleShortVersionString) = the `version` input (must be > latest release)
+#   build number (CFBundleVersion)            = (# of existing release tags) + 1  →  +1 each release
+#   git tag                                    = release/v<version>  (created on the released commit)
+#
+# ONE-TIME SETUP — the approval gate only works once you create the environment:
+#   Settings ▸ Environments ▸ New environment "release" ▸ Required reviewers ▸ add yourself
+#
+# Required repository variable (Settings ▸ Secrets and variables ▸ Actions ▸ Variables):
+#   TEAM_ID                   Apple Developer Team ID, e.g. T454LAHC7P (not sensitive)
+#   SPARKLE_PUBLIC_ED_KEY     Sparkle EdDSA public key from `generate_keys`
+#
+# Required repository secrets (Settings ▸ Secrets and variables ▸ Actions ▸ Secrets):
+#   BUILD_CERTIFICATE_BASE64  base64 of your "Developer ID Application" .p12
+#                               base64 -i Certificates.p12 | pbcopy
+#   P12_PASSWORD              password you set when exporting the .p12
+#   APPLE_ID                  Apple ID email used for notarization
+#   APPLE_APP_PASSWORD        app-specific password (appleid.apple.com ▸ App-Specific Passwords)
+#   SPARKLE_PRIVATE_KEY       Sparkle private key exported with `generate_keys -x`
+#   TAP_TOKEN                 fine-grained PAT for dogany/homebrew-tap (Contents: Read and write)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "App version, e.g. 0.0.3 (must be greater than the latest release)"
+        required: true
+        type: string
+
+permissions:
+  contents: write          # create the release + tag on this repo (uses GITHUB_TOKEN)
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26      # Tahoe host: matches the Xcode 26 SDK. Required to compile the
+                           # Cyclope.icon (Icon Composer) asset — actool crashes on macos-15.
+    env:
+      TEAM_ID: ${{ vars.TEAM_ID }}
+      SCHEME: Cyclope
+      APP_NAME: Cyclope
+      VERSION: ${{ inputs.version }}
+      SPARKLE_PUBLIC_ED_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      build:   ${{ steps.resolve.outputs.build }}
+      tag:     ${{ steps.resolve.outputs.tag }}
+      sha:     ${{ steps.dmg.outputs.sha }}
+      sparkle_signature: ${{ steps.sparkle.outputs.ed_signature }}
+      dmg_length: ${{ steps.sparkle.outputs.length }}
+      minimum_system_version: ${{ steps.sparkle.outputs.minimum_system_version }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable   # or pin e.g. '26.5'
+
+      - name: Resolve & verify version + build number
+        id: resolve
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version input '$VERSION' must look like 0.0.3"
+            exit 1
+          fi
+          TAG="release/v$VERSION"
+          if [ -n "$(git ls-remote --tags origin "$TAG")" ]; then
+            echo "::error::tag $TAG already exists — bump the version."
+            exit 1
+          fi
+
+          # The new version must be greater than the latest release (semver-aware).
+          # Matches both the old (release-<v>) and new (release/v<v>) tag formats.
+          LATEST="$(git ls-remote --tags origin 'release-*' 'release/v*' \
+            | awk '!/\^\{\}$/{sub(/.*refs\/tags\/release[\/-]v?/,""); print}' | sort -V | tail -1)"
+          if [ -n "$LATEST" ]; then
+            HIGH="$(printf '%s\n%s\n' "$LATEST" "$VERSION" | sort -V | tail -1)"
+            if [ "$VERSION" = "$LATEST" ] || [ "$HIGH" != "$VERSION" ]; then
+              echo "::error::version $VERSION must be greater than the latest release $LATEST"
+              exit 1
+            fi
+          fi
+
+          # Build number = (# of existing release tags) + 1 → +1 per release.
+          COUNT="$(git ls-remote --tags origin 'release-*' 'release/v*' | awk '!/\^\{\}$/' | wc -l | tr -d ' ')"
+          BUILD=$((COUNT + 1))
+
+          {
+            echo "version=$VERSION"
+            echo "build=$BUILD"
+            echo "tag=$TAG"
+          } >> "$GITHUB_OUTPUT"
+          echo "TAG=$TAG"     >> "$GITHUB_ENV"
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
+          echo "→ version $VERSION (build $BUILD), tag $TAG (latest was ${LATEST:-none})"
+
+      - name: Import Developer ID certificate
+        env:
+          CERT_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/cert.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PW="$(openssl rand -base64 24)"
+
+          echo "$CERT_BASE64" | openssl base64 -d -A > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN_PATH"
+
+          security import "$CERT_PATH" -P "$P12_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PW" "$KEYCHAIN_PATH" >/dev/null
+
+          # Make the temp keychain visible to xcodebuild/codesign (prepend, keep others).
+          security list-keychains -d user -s "$KEYCHAIN_PATH" \
+            $(security list-keychains -d user | tr -d '"')
+
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Build & sign (Developer ID, manual)
+        working-directory: app
+        run: |
+          set -euo pipefail
+          if [ -z "${SPARKLE_PUBLIC_ED_KEY:-}" ]; then
+            echo "::error::Repository variable SPARKLE_PUBLIC_ED_KEY is required for Sparkle releases."
+            exit 1
+          fi
+
+          BUILD_DIR="$PWD/build"
+          DERIVED_DATA="$BUILD_DIR/DerivedData"
+          ARCHIVE="$BUILD_DIR/$APP_NAME.xcarchive"
+          EXPORT_DIR="$BUILD_DIR/export"
+          EXPORT_OPTIONS="$BUILD_DIR/ExportOptions.plist"
+          rm -rf "$BUILD_DIR"
+          mkdir -p "$EXPORT_DIR"
+
+          xcodebuild \
+            -project "$APP_NAME.xcodeproj" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$DERIVED_DATA" \
+            -archivePath "$ARCHIVE" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD" \
+            SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY" \
+            OTHER_CODE_SIGN_FLAGS="--timestamp" \
+            archive
+
+          DEV_ID="$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')"
+          if [ -z "$DEV_ID" ]; then
+            echo "::error::Developer ID Application identity was not found."
+            exit 1
+          fi
+          echo "Using Developer ID identity: $DEV_ID"
+
+          cat > "$EXPORT_OPTIONS" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Developer ID Application</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>teamID</key>
+            <string>$TEAM_ID</string>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$ARCHIVE" \
+            -exportPath "$EXPORT_DIR" \
+            -exportOptionsPlist "$EXPORT_OPTIONS"
+
+          codesign --verify --deep --strict --verbose=4 "$EXPORT_DIR/$APP_NAME.app"
+
+          echo "APP_PATH=$EXPORT_DIR/$APP_NAME.app" >> "$GITHUB_ENV"
+          echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+          echo "DERIVED_DATA=$DERIVED_DATA" >> "$GITHUB_ENV"
+
+      - name: Notarize & staple app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ditto -c -k --keepParent "$APP_PATH" "$BUILD_DIR/$APP_NAME.zip"
+          APP_NOTARY_RESULT="$BUILD_DIR/app-notary-result.json"
+          if ! xcrun notarytool submit "$BUILD_DIR/$APP_NAME.zip" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait \
+            --output-format json | tee "$APP_NOTARY_RESULT"; then
+            echo "::error::App notarization command failed."
+            exit 1
+          fi
+
+          APP_NOTARY_STATUS="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["status"].to_s' "$APP_NOTARY_RESULT")"
+          APP_NOTARY_ID="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["id"].to_s' "$APP_NOTARY_RESULT")"
+          if [ "$APP_NOTARY_STATUS" != "Accepted" ]; then
+            echo "::error::App notarization status: $APP_NOTARY_STATUS"
+            if [ -n "$APP_NOTARY_ID" ]; then
+              xcrun notarytool log \
+                --apple-id "$APPLE_ID" \
+                --team-id "$TEAM_ID" \
+                --password "$APPLE_APP_PASSWORD" \
+                "$APP_NOTARY_ID" \
+                "$BUILD_DIR/app-notary-log.json" || true
+              cat "$BUILD_DIR/app-notary-log.json" || true
+            fi
+            exit 1
+          fi
+
+          xcrun stapler staple "$APP_PATH"
+          xcrun stapler validate "$APP_PATH"
+
+      - name: Package, sign & notarize DMG
+        id: dmg
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          DMG="$BUILD_DIR/$APP_NAME.dmg"
+          RW_DMG="$BUILD_DIR/$APP_NAME-rw.dmg"
+          MOUNT_DIR="$BUILD_DIR/dmg-mount"
+          rm -rf "$MOUNT_DIR" "$RW_DMG" "$DMG"
+          mkdir -p "$MOUNT_DIR"
+
+          cleanup_dmg_build() {
+            if mount | grep -q " on $MOUNT_DIR "; then
+              hdiutil detach "$MOUNT_DIR" -force || true
+            fi
+            rm -rf "$MOUNT_DIR" "$RW_DMG"
+          }
+          trap cleanup_dmg_build EXIT
+
+          APP_SIZE_MB="$(du -sm "$APP_PATH" | awk '{print $1}')"
+          DMG_SIZE_MB=$((APP_SIZE_MB + 256))
+          hdiutil create -size "${DMG_SIZE_MB}m" -fs APFS -volname "$APP_NAME" -ov "$RW_DMG"
+          hdiutil attach "$RW_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -noautoopen -owners off
+          ditto "$APP_PATH" "$MOUNT_DIR/$APP_NAME.app"
+          ln -s /Applications "$MOUNT_DIR/Applications"
+          sync
+          hdiutil detach "$MOUNT_DIR"
+          hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG"
+          rm -rf "$MOUNT_DIR" "$RW_DMG"
+          trap - EXIT
+
+          hdiutil verify "$DMG"
+          hdiutil imageinfo "$DMG"
+
+          DEV_ID="$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')"
+          if [ -z "$DEV_ID" ]; then
+            echo "::error::Developer ID Application identity was not found."
+            exit 1
+          fi
+          codesign --force --sign "$DEV_ID" --timestamp "$DMG"
+          codesign --verify --verbose=4 "$DMG"
+
+          DMG_NOTARY_RESULT="$BUILD_DIR/dmg-notary-result.json"
+          if ! xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait \
+            --force \
+            --output-format json | tee "$DMG_NOTARY_RESULT"; then
+            echo "::error::DMG notarization command failed."
+            exit 1
+          fi
+
+          DMG_NOTARY_STATUS="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["status"].to_s' "$DMG_NOTARY_RESULT")"
+          DMG_NOTARY_ID="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["id"].to_s' "$DMG_NOTARY_RESULT")"
+          if [ "$DMG_NOTARY_STATUS" != "Accepted" ]; then
+            echo "::error::DMG notarization status: $DMG_NOTARY_STATUS"
+            if [ -n "$DMG_NOTARY_ID" ]; then
+              xcrun notarytool log \
+                --apple-id "$APPLE_ID" \
+                --team-id "$TEAM_ID" \
+                --password "$APPLE_APP_PASSWORD" \
+                "$DMG_NOTARY_ID" \
+                "$BUILD_DIR/dmg-notary-log.json" || true
+              cat "$BUILD_DIR/dmg-notary-log.json" || true
+            fi
+            exit 1
+          fi
+
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+          spctl -a -t open --context context:primary-signature -v "$DMG" || true
+
+          SHA="$(shasum -a 256 "$DMG" | awk '{print $1}')"
+          echo "DMG=$DMG" >> "$GITHUB_ENV"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+          # Surface the numbers for the approver to confirm before deploying.
+          {
+            echo "## Cyclope $VERSION (build $BUILD)"
+            echo ""
+            echo "| field | value |"
+            echo "|---|---|"
+            echo "| app version | \`$VERSION\` |"
+            echo "| build number | \`$BUILD\` |"
+            echo "| tag | \`$TAG\` |"
+            echo "| dmg | \`$(basename "$DMG")\` |"
+            echo "| sha256 | \`$SHA\` |"
+            echo ""
+            echo "Approve the **release** job to tag, publish, and bump the cask."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sign Sparkle update
+        id: sparkle
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SPARKLE_PRIVATE_KEY:-}" ]; then
+            echo "::error::Repository secret SPARKLE_PRIVATE_KEY is required for Sparkle releases."
+            exit 1
+          fi
+
+          SIGN_UPDATE="$(find "$DERIVED_DATA/SourcePackages/artifacts" -path '*/Sparkle/bin/sign_update' -type f -print -quit)"
+          if [ -z "$SIGN_UPDATE" ]; then
+            echo "::error::Sparkle sign_update tool was not found in SwiftPM artifacts."
+            exit 1
+          fi
+
+          SIGNING_ATTRS="$(printf '%s\n' "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - "$DMG")"
+          ED_SIGNATURE="$(printf '%s\n' "$SIGNING_ATTRS" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')"
+          LENGTH="$(printf '%s\n' "$SIGNING_ATTRS" | sed -n 's/.*length="\([^"]*\)".*/\1/p')"
+          MINIMUM_SYSTEM_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP_PATH/Contents/Info.plist" 2>/dev/null || true)"
+
+          if [ -z "$ED_SIGNATURE" ] || [ -z "$LENGTH" ]; then
+            echo "::error::Could not parse Sparkle signing output: $SIGNING_ATTRS"
+            exit 1
+          fi
+
+          {
+            echo "ed_signature=$ED_SIGNATURE"
+            echo "length=$LENGTH"
+            echo "minimum_system_version=$MINIMUM_SYSTEM_VERSION"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dmg
+          path: ${{ env.DMG }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release     # ← manual approval gate (configure required reviewers, see header)
+    env:
+      APP_NAME: Cyclope
+      VERSION: ${{ needs.build.outputs.version }}
+      BUILD:   ${{ needs.build.outputs.build }}
+      TAG:     ${{ needs.build.outputs.tag }}
+      SHA:     ${{ needs.build.outputs.sha }}
+      SPARKLE_ED_SIGNATURE: ${{ needs.build.outputs.sparkle_signature }}
+      DMG_LENGTH: ${{ needs.build.outputs.dmg_length }}
+      MINIMUM_SYSTEM_VERSION: ${{ needs.build.outputs.minimum_system_version }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download DMG artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: dmg
+          path: dist
+
+      - name: Create GitHub release (tags the commit release/v<version>)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" "dist/$APP_NAME.dmg" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$APP_NAME $VERSION" \
+            --generate-notes
+
+      - name: Bump Homebrew cask
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAP_DIR="$RUNNER_TEMP/homebrew-tap"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/dogany/homebrew-tap.git" "$TAP_DIR"
+          cd "$TAP_DIR"
+
+          # perl -i works the same on macOS and Linux. The cask url must point at
+          # the release/v#{version} tag and the fixed Cyclope.dmg filename, so
+          # version + sha256 change per release.
+          perl -i -pe "s/^  version \".*\"/  version \"$VERSION\"/" Casks/cyclope.rb
+          perl -i -pe "s/^  sha256 \".*\"/  sha256 \"$SHA\"/"       Casks/cyclope.rb
+
+          APPCAST_PATH="$TAP_DIR/appcasts/cyclope.xml"
+          DMG_URL="https://github.com/dogany/cyclope/releases/download/$TAG/$APP_NAME.dmg"
+          RELEASE_URL="https://github.com/dogany/cyclope/releases/tag/$TAG"
+          PUB_DATE="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+
+          APPCAST_PATH="$APPCAST_PATH" \
+          APP_NAME="$APP_NAME" \
+          VERSION="$VERSION" \
+          BUILD="$BUILD" \
+          DMG_URL="$DMG_URL" \
+          DMG_LENGTH="$DMG_LENGTH" \
+          SPARKLE_ED_SIGNATURE="$SPARKLE_ED_SIGNATURE" \
+          RELEASE_URL="$RELEASE_URL" \
+          MINIMUM_SYSTEM_VERSION="$MINIMUM_SYSTEM_VERSION" \
+          PUB_DATE="$PUB_DATE" \
+            ruby "$GITHUB_WORKSPACE/scripts/update_appcast.rb"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/cyclope.rb appcasts/cyclope.xml
+          git commit -m "Update Cyclope cask to $VERSION"
+          git push

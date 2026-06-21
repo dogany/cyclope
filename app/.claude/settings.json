@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "WebSearch(*)",
+      "WebFetch(*)",
+      "Skill(*)"
+    ]
+  },
+  "preferredNotifChannel": "auto"
+}

@@ -1,0 +1,11 @@
+{
+	"version": 1,
+	"skills": {
+		"css-design-system": {
+			"source": "ujon/skills",
+			"sourceType": "github",
+			"skillPath": "skills/css-design-system/SKILL.md",
+			"computedHash": "6dccb8d77fc91abbe8e24b7659869ae7ce3f7b1e6bf1e8a72a7e1406c876c9d3"
+		}
+	}
+}

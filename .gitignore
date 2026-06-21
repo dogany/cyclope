@@ -19,3 +19,9 @@ $RECYCLE.BIN/
 # Linux
 *~
 .nfs*
+
+# Build output (xcodebuild archive/export, release.sh, CI)
+build/
+
+# Xcode user state
+*.xcuserstate
