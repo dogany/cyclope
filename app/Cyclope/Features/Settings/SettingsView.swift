@@ -77,6 +77,13 @@ struct SettingsView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .about:
+                    SettingsRoundedPane {
+                        SettingsContentColumn(title: String(localized: "About")) {
+                            AboutSettingsPanel()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -656,6 +663,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case sleep
     case scrolling
     case permissions
+    case about
 
     var id: Self { self }
 
@@ -671,6 +679,8 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
             return String(localized: "Scrolling")
         case .permissions:
             return String(localized: "Permissions")
+        case .about:
+            return String(localized: "About")
         }
     }
 
@@ -686,6 +696,8 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
             return "arrow.up.arrow.down"
         case .permissions:
             return "lock.shield"
+        case .about:
+            return "info.circle"
         }
     }
 }

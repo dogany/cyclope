@@ -244,6 +244,22 @@
         }
       }
     },
+    "About" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "정보"
+          }
+        }
+      }
+    },
     "Activate" : {
       "comment" : "Menu item that turns Sleep Prevention on.",
       "extractionState" : "stale",
@@ -2940,6 +2956,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "마우스 휠 스크롤"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "버전 %@"
           }
         }
       }

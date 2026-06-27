@@ -509,9 +509,14 @@ final class CyclopeController: ObservableObject {
         statusMessage = "Copied \(shortcut.title) shortcut."
     }
 
-    func showSettingsWindow() {
-        let window = settingsWindow ?? makeSettingsWindow()
+    func showSettingsWindow(category: SettingsCategory? = nil) {
+        let window = settingsWindow ?? makeSettingsWindow(initialCategory: category ?? initialSettingsCategory)
         settingsWindow = window
+
+        if let category, window.contentViewController != nil {
+            window.contentViewController = makeSettingsContentController(initialCategory: category)
+        }
+
         markSettingsWindowAsSnapTarget()
         refreshExternalSettingsState()
         NSApp.activate()
@@ -856,14 +861,18 @@ final class CyclopeController: ObservableObject {
         )
     }
 
-    private func makeSettingsWindow() -> NSWindow {
-        let hostingController = NSHostingController(
-            rootView: SettingsView(initialSelection: initialSettingsCategory)
+    private func makeSettingsContentController(initialCategory: SettingsCategory) -> NSViewController {
+        NSHostingController(
+            rootView: SettingsView(initialSelection: initialCategory)
                 .environmentObject(self)
                 .environmentObject(permissionCoordinator)
                 .environmentObject(launchAtLoginService)
                 .environmentObject(updateService)
         )
+    }
+
+    private func makeSettingsWindow(initialCategory: SettingsCategory) -> NSWindow {
+        let hostingController = makeSettingsContentController(initialCategory: initialCategory)
         let window = NSWindow(contentViewController: hostingController)
         let minSize = NSSize(width: 720, height: 540)
 

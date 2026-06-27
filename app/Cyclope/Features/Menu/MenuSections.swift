@@ -263,6 +263,12 @@ struct ApplicationMenuSection: View {
             }
 
             Button {
+                controller.showSettingsWindow(category: .about)
+            } label: {
+                Text("About")
+            }
+
+            Button {
                 NSApp.terminate(nil)
             } label: {
                 Text("Quit")
