@@ -1,19 +1,36 @@
-# Cyclope
+<p align="right">
+  <a href="README.md">English</a> | 한국어
+</p>
 
-[English](README.md) | 한국어
+<h1 align="center">Cyclope</h1>
 
-![Cyclope 배너](assets/Banner.png)
+<p align="center"><strong>All-in-One Mac Control</strong></p>
 
-Cyclope는 자주 쓰는 데스크톱 제어 기능을 가까이에 두기 위한 로컬 Mac 유틸리티입니다. 계정, 분석 도구, 클라우드 동기화, 호스팅 백엔드 없이 잠자기 방지, 창 스냅, 사용자 지정 단축키를 메뉴 막대에서 제어할 수 있습니다.
+<p align="center">
+  <a href="https://dogany.github.io/cyclope/">
+    <img src="assets/AppIcon.png" alt="Cyclope 앱 아이콘" width="128">
+  </a>
+</p>
 
-이 앱은 빠르게 접근할 수 있고 예측 가능하게 동작해야 하는 작고 실용적인 워크플로를 중심으로 만들어졌습니다. Cyclope는 필요할 때까지 방해하지 않고 있다가, Mac의 창과 세션 제어를 한곳에서 사용할 수 있게 하는 것을 목표로 합니다.
+Cyclope는 자주 쓰는 데스크톱 제어 기능을 하나의 작은 메뉴 막대 앱에 모은 로컬 Mac 유틸리티입니다. 계정, 분석 도구, 클라우드 동기화, 호스팅 백엔드 없이 창 관리, 잠자기 방지, 스크롤 방향 제어를 사용할 수 있습니다.
+
+필요할 때까지 방해하지 않고 있다가, 자주 쓰는 Mac 제어 기능을 클릭 한 번이나 단축키로 바로 사용할 수 있게 합니다.
+
+## 설치
+
+Homebrew로 설치:
+
+```sh
+brew install --cask dogany/tap/cyclope
+```
+
+또는 [GitHub Releases](https://github.com/dogany/cyclope/releases)에서 `.dmg`를 다운로드할 수 있습니다.
 
 ## 기능
 
-- 집중 작업이나 장시간 실행 작업이 필요할 때 Mac이 잠자기 상태로 들어가지 않도록 방지
-- 가벼운 제어 방식으로 창을 스냅하고 정렬
-- 반복되는 데스크톱 작업을 위한 사용자 지정 단축키 설정
-- 설정을 사용자의 기기에 로컬로 보관
+- 창 관리
+- 잠자기 방지
+- 스크롤 방향 제어
 
 ## BMFM
 

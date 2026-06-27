@@ -1,19 +1,36 @@
-# Cyclope
+<p align="right">
+  English | <a href="README.ko.md">한국어</a>
+</p>
 
-English | [한국어](README.ko.md)
+<h1 align="center">Cyclope</h1>
 
-![Cyclope banner](assets/Banner.png)
+<p align="center"><strong>All-in-One Mac Control</strong></p>
 
-Cyclope is a local Mac utility for keeping a few everyday desktop controls close at hand. It provides menu bar controls for sleep prevention, window snapping, and custom shortcuts without requiring accounts, analytics, cloud sync, or a hosted backend.
+<p align="center">
+  <a href="https://dogany.github.io/cyclope/">
+    <img src="assets/AppIcon.png" alt="Cyclope app icon" width="128">
+  </a>
+</p>
 
-The app is built around small, practical workflows that should be fast to reach and predictable to use. Cyclope is intended to stay out of the way until you need it, then make common Mac window and session controls available from one place.
+Cyclope is a local Mac utility that keeps everyday desktop controls in one compact menu bar app. Manage windows, prevent sleep, and adjust scroll direction without accounts, analytics, cloud sync, or a hosted backend.
+
+It stays out of the way until you need it, then puts common Mac controls one click or shortcut away.
+
+## Installation
+
+Install with Homebrew:
+
+```sh
+brew install --cask dogany/tap/cyclope
+```
+
+Or download the `.dmg` from [GitHub Releases](https://github.com/dogany/cyclope/releases).
 
 ## Features
 
-- Prevent your Mac from sleeping when you need a focused work session or long-running task
-- Snap and arrange windows with lightweight controls
-- Configure custom shortcuts for repeated desktop actions
-- Keep settings local on your device
+- Window Management
+- Sleep Prevention
+- Scroll Direction Control
 
 ## BMFM
 

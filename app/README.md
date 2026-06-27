@@ -1,4 +1,6 @@
-# Cyclope
+<h1 align="center">Cyclope</h1>
+
+<p align="center"><strong>All-in-One Mac Control</strong></p>
 
 BMFM(By Me, For Me) Project #2
 
@@ -8,15 +10,15 @@ Cyclope was born from a menu bar that kept getting crowded. I wanted fewer icons
 
 Cyclope brings my most-used utilities into a single compact menu bar app. Keep the Mac awake, snap windows into place, and tune the shortcuts that fit the way I work.
 
-![Cyclope menu bar preview](screenshots/app-store/preview/01-one-menu-bar-icon.png)
+<p align="center">
+  <img src="../assets/AppIcon.png" alt="Cyclope app icon" width="128">
+</p>
 
 ## Features
 
-- One menu bar icon for frequently used Mac controls.
-- Keep your Mac awake for a selected duration.
-- Snap windows with menu commands, global shortcuts, or snap activation areas.
-- Customize shortcuts, menu items, snap commands, and default behavior.
-- Keep settings and app behavior on your device, with no Cyclope backend.
+- Window Management
+- Sleep Prevention
+- Scroll Direction Control
 
 ## Utilities
 
@@ -28,17 +30,26 @@ Cyclope can move the focused window to common positions such as left, right, top
 
 Sleep Prevention keeps the system and display awake for a chosen duration. The menu offers quick presets (15 minutes, 30 minutes, 1 hour, 2 hours, and until turned off), and Settings add a default duration, battery-aware disabling with a battery-level threshold, and a global toggle shortcut.
 
+### Scroll Direction
+
+Scroll Direction provides quick toggles for macOS Natural Scrolling and wheel mouse scroll reversal.
+
+### Settings And About
+
+Settings cover app visibility, login behavior, menus, shortcuts, sleep defaults, permissions, updates, and About information.
+
 ## Permissions
 
 Cyclope asks only for the macOS permissions needed by the enabled utilities:
 
 - Accessibility: required for window snapping and global shortcuts.
+- Input Monitoring: required for wheel mouse scroll reversal.
 
 You can review permission status from the app's Settings window.
 
 ## Requirements
 
-- macOS 26.0 or later.
+- macOS 15.0 or later.
 - Xcode 26 or later for local development.
 
 The app target is `Cyclope`, with bundle identifier `com.dogany.cyclope`.

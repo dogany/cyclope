@@ -17,6 +17,19 @@
 	}
 
 	const t = $derived(copyFor(prefs.language));
+	let heroFlow = $state(0);
+
+	const heroStyle = $derived(
+		[
+			`--hero-flow: ${heroFlow.toFixed(3)}`,
+			`--hero-content-y: ${(-22 * heroFlow).toFixed(2)}px`,
+			`--hero-scale: ${(1 - 0.025 * heroFlow).toFixed(3)}`,
+			`--hero-content-opacity: ${(1 - 0.12 * heroFlow).toFixed(3)}`,
+			`--feature-lift: ${(24 - 24 * heroFlow).toFixed(2)}px`,
+			`--bridge-y: ${(14 * heroFlow).toFixed(2)}px`,
+			`--bridge-opacity: ${(1 - 0.55 * heroFlow).toFixed(3)}`
+		].join('; ')
+	);
 
 	let release = $state(
 		/** @type {{ version: string, dmgUrl: string | null, sizeMb: number | null, htmlUrl: string } | null} */ (
@@ -69,6 +82,39 @@
 		if (browser) document.documentElement.lang = t.lang;
 	});
 
+	// Connect the hero and feature section with a light scroll-driven motion.
+	$effect(() => {
+		if (!browser) return;
+		const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+		let frame = 0;
+
+		const update = () => {
+			frame = 0;
+			if (motionQuery.matches) {
+				heroFlow = 0;
+				return;
+			}
+			const viewport = window.innerHeight || 1;
+			const next = Math.min(1, Math.max(0, window.scrollY / (viewport * 0.74)));
+			heroFlow = next;
+		};
+		const queue = () => {
+			if (!frame) frame = requestAnimationFrame(update);
+		};
+
+		update();
+		window.addEventListener('scroll', queue, { passive: true });
+		window.addEventListener('resize', queue);
+		motionQuery.addEventListener('change', update);
+
+		return () => {
+			cancelAnimationFrame(frame);
+			window.removeEventListener('scroll', queue);
+			window.removeEventListener('resize', queue);
+			motionQuery.removeEventListener('change', update);
+		};
+	});
+
 	// Resolve the newest .dmg from GitHub Releases (client-only).
 	$effect(() => {
 		let cancelled = false;
@@ -105,7 +151,7 @@
 
 <Topbar />
 
-<main id="top">
+<main id="top" style={heroStyle}>
 	<section class="hero" aria-label="Cyclope overview" onpointermove={spotlight}>
 		<HeroParticles />
 		<div class="hero-content">
@@ -132,14 +178,23 @@
 			</div>
 			<p class="download-meta">{t.downloadNote}</p>
 		</div>
+		<a class="hero-scroll-link" href="#features" aria-label="View Cyclope features">
+			<span class="hero-scroll-line"></span>
+			<svg viewBox="0 0 24 24" aria-hidden="true">
+				<path
+					d="M6 9l6 6 6-6"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				></path>
+			</svg>
+		</a>
 	</section>
 
 	<section class="section" id="features">
 		<div class="section-inner">
-			<p class="section-eyebrow">{t.sectionEyebrow}</p>
-			<h2>{@html t.sectionTitle}</h2>
-			<p class="section-lede">{t.sectionLede}</p>
-
 			<div class="feature-strip" aria-label="Cyclope highlights">
 				<div class="feature-pill" use:reveal>
 					<span class="feature-icon" aria-hidden="true">
