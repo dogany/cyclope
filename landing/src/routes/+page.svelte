@@ -17,10 +17,13 @@
 	}
 
 	const t = $derived(copyFor(prefs.language));
+	const canonicalUrl = 'https://dogany.github.io/cyclope/';
+	const shareImageUrl = 'https://dogany.github.io/cyclope/assets/og-image.png';
 	const homebrewCommand = 'brew install --cask dogany/tap/cyclope';
 	let heroFlow = $state(0);
 	let installCopied = $state(false);
 	let copyTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
+	const shareTitle = $derived(`${t.title} - ${t.heroTagline}`);
 
 	const heroStyle = $derived(
 		[
@@ -165,6 +168,25 @@
 <svelte:head>
 	<title>{t.title}</title>
 	<meta name="description" content={t.description} />
+	<link rel="canonical" href={canonicalUrl} />
+
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Cyclope" />
+	<meta property="og:url" content={canonicalUrl} />
+	<meta property="og:title" content={shareTitle} />
+	<meta property="og:description" content={t.description} />
+	<meta property="og:image" content={shareImageUrl} />
+	<meta property="og:image:secure_url" content={shareImageUrl} />
+	<meta property="og:image:type" content="image/png" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:alt" content={t.shareImageAlt} />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={shareTitle} />
+	<meta name="twitter:description" content={t.description} />
+	<meta name="twitter:image" content={shareImageUrl} />
+	<meta name="twitter:image:alt" content={t.shareImageAlt} />
 </svelte:head>
 
 {#snippet check()}

@@ -10,8 +10,9 @@ run-name: Release v${{ inputs.version }}
 #      confirm the numbers look right, approve it to tag + publish + bump the cask
 #
 # Versioning:
-#   app version  (CFBundleShortVersionString) = the `version` input (must be > latest release)
-#   build number (CFBundleVersion)            = (# of existing release tags) + 1  →  +1 each release
+#   app version  (CFBundleShortVersionString) = MARKETING_VERSION in the Xcode project
+#                                                (must match the `version` input and be > latest release)
+#   build number (CFBundleVersion)            = CURRENT_PROJECT_VERSION in the Xcode project
 #   git tag                                    = release/v<version>  (created on the released commit)
 #
 # ONE-TIME SETUP — the approval gate only works once you create the environment:
@@ -30,16 +31,16 @@ run-name: Release v${{ inputs.version }}
 #   SPARKLE_PRIVATE_KEY       Sparkle private key exported with `generate_keys -x`
 #   TAP_TOKEN                 fine-grained PAT for dogany/homebrew-tap (Contents: Read and write)
 
-on:
+'on':
   workflow_dispatch:
     inputs:
       version:
-        description: "App version, e.g. 0.0.3 (must be greater than the latest release)"
+        description: App version, e.g. 0.0.3 (must be greater than the latest release)
         required: true
         type: string
 
 permissions:
-  contents: write          # create the release + tag on this repo (uses GITHUB_TOKEN)
+  contents: write # create the release + tag on this repo (uses GITHUB_TOKEN)
 
 concurrency:
   group: release
@@ -47,8 +48,9 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-26      # Tahoe host: matches the Xcode 26 SDK. Required to compile the
-                           # Cyclope.icon (Icon Composer) asset — actool crashes on macos-15.
+    runs-on: macos-26
+      # Tahoe host: matches the Xcode 26 SDK. Required to compile the
+      # Cyclope.icon (Icon Composer) asset — actool crashes on macos-15.
     env:
       TEAM_ID: ${{ vars.TEAM_ID }}
       SCHEME: Cyclope
@@ -57,9 +59,9 @@ jobs:
       SPARKLE_PUBLIC_ED_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
     outputs:
       version: ${{ steps.resolve.outputs.version }}
-      build:   ${{ steps.resolve.outputs.build }}
-      tag:     ${{ steps.resolve.outputs.tag }}
-      sha:     ${{ steps.dmg.outputs.sha }}
+      build: ${{ steps.resolve.outputs.build }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      sha: ${{ steps.dmg.outputs.sha }}
       sparkle_signature: ${{ steps.sparkle.outputs.ed_signature }}
       dmg_length: ${{ steps.sparkle.outputs.length }}
       minimum_system_version: ${{ steps.sparkle.outputs.minimum_system_version }}
@@ -70,9 +72,9 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable   # or pin e.g. '26.5'
+          xcode-version: latest-stable # or pin e.g. '26.5'
 
-      - name: Resolve & verify version + build number
+      - name: Resolve & verify project version + build number
         id: resolve
         run: |
           set -euo pipefail
@@ -98,9 +100,29 @@ jobs:
             fi
           fi
 
-          # Build number = (# of existing release tags) + 1 → +1 per release.
-          COUNT="$(git ls-remote --tags origin 'release-*' 'release/v*' | awk '!/\^\{\}$/' | wc -l | tr -d ' ')"
-          BUILD=$((COUNT + 1))
+          PROJECT_VERSION="$(xcodebuild \
+            -project app/$APP_NAME.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -showBuildSettings \
+            | awk -F' = ' '/^[[:space:]]*MARKETING_VERSION = / { print $2; exit }')"
+          BUILD="$(xcodebuild \
+            -project app/$APP_NAME.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -showBuildSettings \
+            | awk -F' = ' '/^[[:space:]]*CURRENT_PROJECT_VERSION = / { print $2; exit }')"
+
+          if [ "$PROJECT_VERSION" != "$VERSION" ]; then
+            echo "::error::version input $VERSION must match MARKETING_VERSION $PROJECT_VERSION in app/$APP_NAME.xcodeproj"
+            exit 1
+          fi
+          if [[ ! "$BUILD" =~ ^[0-9]+$ ]]; then
+            echo "::error::CURRENT_PROJECT_VERSION '$BUILD' must be a positive integer in app/$APP_NAME.xcodeproj"
+            exit 1
+          fi
 
           {
             echo "version=$VERSION"
@@ -109,7 +131,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "TAG=$TAG"     >> "$GITHUB_ENV"
           echo "BUILD=$BUILD" >> "$GITHUB_ENV"
-          echo "→ version $VERSION (build $BUILD), tag $TAG (latest was ${LATEST:-none})"
+          echo "→ version $PROJECT_VERSION (build $BUILD), tag $TAG (latest was ${LATEST:-none})"
 
       - name: Import Developer ID certificate
         env:
@@ -385,13 +407,13 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    environment: release     # ← manual approval gate (configure required reviewers, see header)
+    environment: release # ← manual approval gate (configure required reviewers, see header)
     env:
       APP_NAME: Cyclope
       VERSION: ${{ needs.build.outputs.version }}
-      BUILD:   ${{ needs.build.outputs.build }}
-      TAG:     ${{ needs.build.outputs.tag }}
-      SHA:     ${{ needs.build.outputs.sha }}
+      BUILD: ${{ needs.build.outputs.build }}
+      TAG: ${{ needs.build.outputs.tag }}
+      SHA: ${{ needs.build.outputs.sha }}
       SPARKLE_ED_SIGNATURE: ${{ needs.build.outputs.sparkle_signature }}
       DMG_LENGTH: ${{ needs.build.outputs.dmg_length }}
       MINIMUM_SYSTEM_VERSION: ${{ needs.build.outputs.minimum_system_version }}
