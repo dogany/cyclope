@@ -17,7 +17,10 @@
 	}
 
 	const t = $derived(copyFor(prefs.language));
+	const homebrewCommand = 'brew install --cask dogany/tap/cyclope';
 	let heroFlow = $state(0);
+	let installCopied = $state(false);
+	let copyTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
 
 	const heroStyle = $derived(
 		[
@@ -45,6 +48,34 @@
 	const downloadSub = $derived(
 		release?.version ? `v${release.version}${release.sizeMb ? ` · ${release.sizeMb} MB` : ''}` : ''
 	);
+
+	async function copyInstallCommand() {
+		if (!browser) return;
+		if (copyTimer) clearTimeout(copyTimer);
+
+		try {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(homebrewCommand);
+			} else {
+				const textArea = document.createElement('textarea');
+				textArea.value = homebrewCommand;
+				textArea.setAttribute('readonly', '');
+				textArea.style.position = 'fixed';
+				textArea.style.opacity = '0';
+				document.body.appendChild(textArea);
+				textArea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textArea);
+			}
+			installCopied = true;
+			copyTimer = setTimeout(() => {
+				installCopied = false;
+				copyTimer = undefined;
+			}, 1800);
+		} catch {
+			installCopied = false;
+		}
+	}
 
 	const showcases = [
 		{
@@ -175,6 +206,51 @@
 						{#if downloadSub}<span class="download-button-sub">{downloadSub}</span>{/if}
 					</span>
 				</a>
+				<button
+					class:copied={installCopied}
+					class="install-command"
+					type="button"
+					aria-label={t.installCopyLabel}
+					onclick={copyInstallCommand}
+				>
+					<code><span aria-hidden="true">$</span>{homebrewCommand}</code>
+					<span class="install-command-action" aria-live="polite">
+						{#if installCopied}
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path
+									d="M20 6L9 17l-5-5"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								></path>
+							</svg>
+							<span class="sr-only">{t.installCopied}</span>
+						{:else}
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<rect
+									x="9"
+									y="9"
+									width="10"
+									height="10"
+									rx="2"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								></rect>
+								<path
+									d="M5 15V7a2 2 0 0 1 2-2h8"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+								></path>
+							</svg>
+							<span class="sr-only">{t.installCopy}</span>
+						{/if}
+					</span>
+				</button>
 			</div>
 			<p class="download-meta">{t.downloadNote}</p>
 		</div>
